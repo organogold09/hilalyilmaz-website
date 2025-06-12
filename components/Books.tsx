@@ -45,7 +45,40 @@ const Books = ({ navigateWithTransition }: BooksProps) => {
 
   // Admin panelinden kitap verilerini yükle
   useEffect(() => {
-    const loadBookData = () => {
+    const loadBookData = async () => {
+      try {
+        // Önce API'den dene
+        const response = await fetch('/api/books?featured=true')
+        if (response.ok) {
+          const books = await response.json()
+          
+          if (books && books.length > 0) {
+            const featuredBook = books[0] // İlk kitabı al (featured olanlar önce gelir)
+            
+            const processedBookData = {
+              title: featuredBook.title,
+              subtitle: featuredBook.description,
+              description: featuredBook.description,
+              publishDate: new Date(featuredBook.publish_date).getFullYear().toString(),
+              pages: featuredBook.page_count?.toString() || "169",
+              genre: featuredBook.genre,
+              isbn: featuredBook.isbn,
+              publisher: "Yayınevi Adı",
+              excerpt: featuredBook.excerpt || featuredBook.description.substring(0, 150) + "...",
+              themes: featuredBook.tags || ["Aşk", "Kayıp", "Yeniden Doğuş"],
+              amazonLink: featuredBook.amazon_link,
+              coverImage: featuredBook.cover_image
+            }
+            setBookData(processedBookData)
+            console.log('Kitap verisi API\'den yüklendi:', processedBookData)
+            return
+          }
+        }
+      } catch (error) {
+        console.error('API\'den kitap verisi yüklenirken hata:', error)
+      }
+
+      // API başarısız olursa localStorage'dan dene
       try {
         const savedBooks = localStorage.getItem('books')
         
@@ -71,10 +104,11 @@ const Books = ({ navigateWithTransition }: BooksProps) => {
               coverImage: featuredBook.coverImage
             }
             setBookData(processedBookData)
+            console.log('Kitap verisi localStorage\'dan yüklendi:', processedBookData)
           }
         }
       } catch (error) {
-        console.error('Kitap verileri yüklenirken hata:', error)
+        console.error('localStorage\'dan kitap verisi yüklenirken hata:', error)
       }
     }
 

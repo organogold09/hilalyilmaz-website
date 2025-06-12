@@ -6,10 +6,14 @@ import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import PageTransition from './PageTransition'
 import { usePageTransition } from '../hooks/usePageTransition'
+import AdminLoginModal from './admin/AdminLoginModal'
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [clickCount, setClickCount] = useState(0)
+  const [showAdminLogin, setShowAdminLogin] = useState(false)
+  const [clickTimeout, setClickTimeout] = useState<NodeJS.Timeout | null>(null)
   const pathname = usePathname()
   const { isTransitioning, navigateWithTransition, scrollWithTransition, onTransitionComplete } = usePageTransition()
 
@@ -21,6 +25,14 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Gizli admin girişi için tıklama sayacını sıfırla
+  useEffect(() => {
+    if (clickCount === 5) {
+      setShowAdminLogin(true)
+      setClickCount(0)
+    }
+  }, [clickCount])
 
   const navItems = [
     { name: 'Ana Sayfa', href: '#home', section: 'home' },
@@ -61,10 +73,29 @@ const Header = () => {
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    if (pathname === '/') {
-      scrollToSection('#home')
-    } else {
-      navigateWithTransition('/')
+    
+    // Gizli admin girişi için tıklama sayacı
+    const newClickCount = clickCount + 1
+    setClickCount(newClickCount)
+    
+    // Önceki timeout'u temizle
+    if (clickTimeout) {
+      clearTimeout(clickTimeout)
+    }
+    
+    // 2 saniye sonra sayacı sıfırla
+    const timeout = setTimeout(() => {
+      setClickCount(0)
+    }, 2000)
+    setClickTimeout(timeout)
+    
+    // Normal logo işlevi (sadece 5. tıklamada değilse)
+    if (newClickCount < 5) {
+      if (pathname === '/') {
+        scrollToSection('#home')
+      } else {
+        navigateWithTransition('/')
+      }
     }
   }
 
@@ -86,7 +117,10 @@ const Header = () => {
             <div className="flex-shrink-0">
               <button 
                 onClick={handleLogoClick}
-                className="text-2xl md:text-3xl font-serif font-bold text-secondary-900 hover:text-primary-500 transition-colors duration-200"
+                className={`text-2xl md:text-3xl font-serif font-bold text-secondary-900 hover:text-primary-500 transition-all duration-200 select-none ${
+                  clickCount > 0 ? 'animate-pulse' : ''
+                }`}
+                title={clickCount > 0 ? `${5 - clickCount} tıklama kaldı...` : ''}
               >
                 Hilal Yılmaz
               </button>
@@ -150,6 +184,12 @@ const Header = () => {
           )}
         </div>
       </header>
+
+      {/* Admin Login Modal */}
+      <AdminLoginModal 
+        isOpen={showAdminLogin}
+        onClose={() => setShowAdminLogin(false)}
+      />
     </>
   )
 }

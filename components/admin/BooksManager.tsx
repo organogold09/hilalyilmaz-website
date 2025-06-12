@@ -37,15 +37,18 @@ const BooksManager = () => {
   const [editingBook, setEditingBook] = useState<Book | null>(null)
   const [showModal, setShowModal] = useState(false)
 
-  // Load books from localStorage on component mount
+  // Load books from API on component mount
   useEffect(() => {
-    const loadBooks = () => {
+    const loadBooks = async () => {
       try {
-        const savedBooks = localStorage.getItem('books')
-        if (savedBooks) {
-          setBooks(JSON.parse(savedBooks))
+        const response = await fetch('/api/books')
+        if (response.ok) {
+          const data = await response.json()
+          setBooks(data)
+          console.log('Kitaplar API\'den yüklendi:', data)
         } else {
-          // Set default books if none exist
+          console.log('API\'den kitap verisi yüklenemedi, varsayılan içerik kullanılıyor')
+          // Varsayılan kitapları localStorage'a kaydet (geçici)
           const defaultBooks: Book[] = [
             {
               id: '1',
@@ -70,6 +73,16 @@ const BooksManager = () => {
         }
       } catch (error) {
         console.error('Kitaplar yüklenirken hata:', error)
+        // Hata durumunda localStorage'dan yükle
+        try {
+          const savedBooks = localStorage.getItem('books')
+          if (savedBooks) {
+            setBooks(JSON.parse(savedBooks))
+            console.log('Kitaplar localStorage\'dan yüklendi')
+          }
+        } catch (localError) {
+          console.error('localStorage\'dan kitap yükleme hatası:', localError)
+        }
       }
     }
 
@@ -106,40 +119,149 @@ const BooksManager = () => {
     setShowModal(false)
   }
 
-  const saveBook = () => {
+  const saveBook = async () => {
     if (!editingBook) return
 
-    let updatedBooks: Book[]
+    try {
+      // Admin session kontrolü
+      const adminSession = localStorage.getItem('adminSession')
+      if (!adminSession) {
+        alert('Admin oturumu bulunamadı. Lütfen tekrar giriş yapın.')
+        return
+      }
 
-    if (editingBook.id) {
-      // Update existing book
-      updatedBooks = books.map(book => 
-        book.id === editingBook.id ? editingBook : book
-      )
-    } else {
-      // Add new book
-      const newBook = { ...editingBook, id: Date.now().toString() }
-      updatedBooks = [...books, newBook]
-    }
-    
-    setBooks(updatedBooks)
-    
-    // Save to localStorage
-    localStorage.setItem('books', JSON.stringify(updatedBooks))
-    
-    closeModal()
-    alert(`Kitap başarıyla ${editingBook.id ? 'güncellendi' : 'eklendi'}! Ana sayfada değişiklikleri görmek için sayfayı yenileyin.`)
-  }
+      // API formatına dönüştür
+      const bookData = {
+        id: editingBook.id ? parseInt(editingBook.id) : undefined,
+        title: editingBook.title,
+        description: editingBook.description,
+        excerpt: editingBook.excerpt,
+        price: parseFloat(editingBook.price) || 0,
+        currency: editingBook.currency,
+        amazon_link: editingBook.amazonLink,
+        cover_image: editingBook.coverImage,
+        publish_date: editingBook.publishDate,
+        isbn: editingBook.isbn,
+        page_count: editingBook.pageCount,
+        genre: editingBook.genre,
+        status: editingBook.status,
+        featured: editingBook.featured,
+        tags: editingBook.tags
+      }
 
-  const deleteBook = (bookId: string) => {
-    if (confirm('Bu kitabı silmek istediğinizden emin misiniz?')) {
-      const updatedBooks = books.filter(book => book.id !== bookId)
-      setBooks(updatedBooks)
+      const response = await fetch('/api/books', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': 'true'
+        },
+        body: JSON.stringify(bookData)
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Kitap veritabanına kaydedildi:', result)
+        
+        // Başarılı kayıt sonrası listeyi yenile
+        const booksResponse = await fetch('/api/books')
+        if (booksResponse.ok) {
+          const updatedBooks = await booksResponse.json()
+          setBooks(updatedBooks)
+        }
+        
+        // localStorage'ı da güncelle (yedek)
+        const updatedBooks = editingBook.id 
+          ? books.map(book => book.id === editingBook.id ? editingBook : book)
+          : [...books, { ...editingBook, id: result.id?.toString() || Date.now().toString() }]
+        
+        localStorage.setItem('books', JSON.stringify(updatedBooks))
+        
+        closeModal()
+        alert(`✅ Kitap başarıyla veritabanına ${editingBook.id ? 'güncellendi' : 'eklendi'}!`)
+      } else {
+        const error = await response.json()
+        console.error('API kitap kayıt hatası:', error)
+        
+        // API hatası durumunda localStorage'a kaydet
+        const updatedBooks = editingBook.id 
+          ? books.map(book => book.id === editingBook.id ? editingBook : book)
+          : [...books, { ...editingBook, id: Date.now().toString() }]
+        
+        setBooks(updatedBooks)
+        localStorage.setItem('books', JSON.stringify(updatedBooks))
+        
+        closeModal()
+        alert(`⚠️ Veritabanına kayıt yapılamadı, geçici olarak localStorage'a kaydedildi.`)
+      }
+    } catch (error) {
+      console.error('Kitap kaydetme hatası:', error)
       
-      // Save to localStorage
+      // Hata durumunda localStorage'a kaydet
+      const updatedBooks = editingBook.id 
+        ? books.map(book => book.id === editingBook.id ? editingBook : book)
+        : [...books, { ...editingBook, id: Date.now().toString() }]
+      
+      setBooks(updatedBooks)
       localStorage.setItem('books', JSON.stringify(updatedBooks))
       
-      alert('Kitap başarıyla silindi! Ana sayfada değişiklikleri görmek için sayfayı yenileyin.')
+      closeModal()
+      alert('⚠️ Bağlantı hatası! Geçici olarak localStorage\'a kaydedildi.')
+    }
+  }
+
+  const deleteBook = async (bookId: string) => {
+    if (!confirm('Bu kitabı silmek istediğinizden emin misiniz?')) return
+
+    try {
+      // Admin session kontrolü
+      const adminSession = localStorage.getItem('adminSession')
+      if (!adminSession) {
+        alert('Admin oturumu bulunamadı. Lütfen tekrar giriş yapın.')
+        return
+      }
+
+      const response = await fetch(`/api/books?id=${bookId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-session': 'true'
+        }
+      })
+
+      if (response.ok) {
+        console.log('Kitap veritabanından silindi')
+        
+        // Başarılı silme sonrası listeyi yenile
+        const booksResponse = await fetch('/api/books')
+        if (booksResponse.ok) {
+          const updatedBooks = await booksResponse.json()
+          setBooks(updatedBooks)
+        }
+        
+        // localStorage'ı da güncelle
+        const updatedBooks = books.filter(book => book.id !== bookId)
+        localStorage.setItem('books', JSON.stringify(updatedBooks))
+        
+        alert('✅ Kitap başarıyla veritabanından silindi!')
+      } else {
+        const error = await response.json()
+        console.error('API kitap silme hatası:', error)
+        
+        // API hatası durumunda localStorage'dan sil
+        const updatedBooks = books.filter(book => book.id !== bookId)
+        setBooks(updatedBooks)
+        localStorage.setItem('books', JSON.stringify(updatedBooks))
+        
+        alert('⚠️ Veritabanından silinemedi, geçici olarak localStorage\'dan silindi.')
+      }
+    } catch (error) {
+      console.error('Kitap silme hatası:', error)
+      
+      // Hata durumunda localStorage'dan sil
+      const updatedBooks = books.filter(book => book.id !== bookId)
+      setBooks(updatedBooks)
+      localStorage.setItem('books', JSON.stringify(updatedBooks))
+      
+      alert('⚠️ Bağlantı hatası! Geçici olarak localStorage\'dan silindi.')
     }
   }
 

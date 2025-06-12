@@ -20,17 +20,31 @@ const About = () => {
   const [aboutContent, setAboutContent] = useState<AboutContent | null>(null)
 
   useEffect(() => {
-    // Load about content from localStorage
-    const loadAboutContent = () => {
+    // Load about content from API first, then fallback to localStorage
+    const loadAboutContent = async () => {
+      try {
+        // Önce API'den dene
+        const response = await fetch('/api/about')
+        if (response.ok) {
+          const data = await response.json()
+          setAboutContent(data)
+          console.log('Hakkımda içeriği API\'den yüklendi:', data)
+          return
+        }
+      } catch (error) {
+        console.error('API\'den hakkımda içeriği yüklenirken hata:', error)
+      }
+
+      // API başarısız olursa localStorage'dan dene
       try {
         const savedContent = localStorage.getItem('aboutContent')
         if (savedContent) {
           const parsedContent = JSON.parse(savedContent)
           setAboutContent(parsedContent)
-          console.log('Hakkımda içeriği yüklendi:', parsedContent)
+          console.log('Hakkımda içeriği localStorage\'dan yüklendi:', parsedContent)
         }
       } catch (error) {
-        console.error('Hakkımda içeriği yüklenirken hata:', error)
+        console.error('localStorage\'dan hakkımda içeriği yüklenirken hata:', error)
       }
     }
 

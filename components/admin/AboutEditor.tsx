@@ -59,22 +59,33 @@ const AboutEditor = () => {
 
   const [previewMode, setPreviewMode] = useState(false)
 
-  // Load about content from localStorage on component mount
+  // Load about content from API on component mount
   useEffect(() => {
-    const loadAboutContent = () => {
+    const loadAboutContent = async () => {
       try {
-        const savedContent = localStorage.getItem('aboutContent')
-        if (savedContent) {
-          const parsedContent = JSON.parse(savedContent)
-          setAboutContent(parsedContent)
-          console.log('Hakkımda içeriği yüklendi:', parsedContent)
+        const response = await fetch('/api/about')
+        if (response.ok) {
+          const data = await response.json()
+          setAboutContent(data)
+          console.log('Hakkımda içeriği API\'den yüklendi:', data)
         } else {
-          // If no saved content, save default content
+          console.log('API\'den veri yüklenemedi, varsayılan içerik kullanılıyor')
+          // Varsayılan içeriği localStorage'a kaydet (geçici)
           localStorage.setItem('aboutContent', JSON.stringify(aboutContent))
-          console.log('Varsayılan hakkımda içeriği kaydedildi')
         }
       } catch (error) {
         console.error('Hakkımda içeriği yüklenirken hata:', error)
+        // Hata durumunda localStorage'dan yükle
+        try {
+          const savedContent = localStorage.getItem('aboutContent')
+          if (savedContent) {
+            const parsedContent = JSON.parse(savedContent)
+            setAboutContent(parsedContent)
+            console.log('Hakkımda içeriği localStorage\'dan yüklendi')
+          }
+        } catch (localError) {
+          console.error('localStorage\'dan yükleme hatası:', localError)
+        }
       }
     }
 
@@ -109,15 +120,46 @@ const AboutEditor = () => {
     }))
   }
 
-  const saveChanges = () => {
+  const saveChanges = async () => {
     try {
-      // Save to localStorage
-      localStorage.setItem('aboutContent', JSON.stringify(aboutContent))
-      console.log('Hakkımda içeriği kaydediliyor:', aboutContent)
-      alert('Hakkımda sayfası başarıyla güncellendi! Ana sayfayı yenileyin.')
+      // Admin session token'ını al
+      const adminSession = localStorage.getItem('adminSession')
+      if (!adminSession) {
+        alert('Admin oturumu bulunamadı. Lütfen tekrar giriş yapın.')
+        return
+      }
+
+      const response = await fetch('/api/about', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-session': 'true' // Basit session kontrolü
+        },
+        body: JSON.stringify(aboutContent)
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Hakkımda içeriği veritabanına kaydedildi:', result)
+        
+        // Başarılı kayıt sonrası localStorage'ı da güncelle (yedek olarak)
+        localStorage.setItem('aboutContent', JSON.stringify(aboutContent))
+        
+        alert('✅ Hakkımda sayfası başarıyla veritabanına kaydedildi!')
+      } else {
+        const error = await response.json()
+        console.error('API kayıt hatası:', error)
+        
+        // API hatası durumunda localStorage'a kaydet
+        localStorage.setItem('aboutContent', JSON.stringify(aboutContent))
+        alert('⚠️ Veritabanına kayıt yapılamadı, geçici olarak localStorage\'a kaydedildi. Lütfen veritabanı bağlantınızı kontrol edin.')
+      }
     } catch (error) {
       console.error('Hakkımda içeriği kaydedilirken hata:', error)
-      alert('Hakkımda içeriği kaydedilirken bir hata oluştu.')
+      
+      // Hata durumunda localStorage'a kaydet
+      localStorage.setItem('aboutContent', JSON.stringify(aboutContent))
+      alert('⚠️ Bağlantı hatası! Geçici olarak localStorage\'a kaydedildi.')
     }
   }
 

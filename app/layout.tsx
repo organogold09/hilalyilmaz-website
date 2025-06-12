@@ -68,10 +68,18 @@ export default function RootLayout({
                     }
                   }
 
-                  // Load color palette
-                  const savedPalette = localStorage.getItem('colorPalette');
-                  if (savedPalette) {
-                    const palette = JSON.parse(savedPalette);
+                  // Hex to RGB function
+                  function hexToRgb(hex) {
+                    const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
+                    return result ? {
+                      r: parseInt(result[1], 16),
+                      g: parseInt(result[2], 16),
+                      b: parseInt(result[3], 16)
+                    } : null;
+                  }
+
+                  // Apply colors to DOM
+                  function applyColors(palette) {
                     const root = document.documentElement;
                     
                     // Temel renkleri ayarla
@@ -83,16 +91,6 @@ export default function RootLayout({
                     root.style.setProperty('--color-text', palette.text);
                     root.style.setProperty('--color-text-secondary', palette.textSecondary);
                     root.style.setProperty('--color-border', palette.border);
-                    
-                    // Hex to RGB function
-                    function hexToRgb(hex) {
-                      const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
-                      return result ? {
-                        r: parseInt(result[1], 16),
-                        g: parseInt(result[2], 16),
-                        b: parseInt(result[3], 16)
-                      } : null;
-                    }
                     
                     // Primary renk tonlarını hesapla
                     const primaryRgb = hexToRgb(palette.primary);
@@ -129,11 +127,40 @@ export default function RootLayout({
                       root.style.setProperty('--color-primary-700', darker700.r + ', ' + darker700.g + ', ' + darker700.b);
                     }
                   }
+
+                  // Load active color palette from database
+                  fetch('/api/colors?active=true')
+                    .then(response => {
+                      if (response.ok) {
+                        return response.json();
+                      }
+                      throw new Error('API failed');
+                    })
+                    .then(data => {
+                      console.log('Aktif renk paleti veritabanından yüklendi:', data);
+                      applyColors(data.colors);
+                      // localStorage'a da kaydet (yedek olarak)
+                      localStorage.setItem('colorPalette', JSON.stringify(data.colors));
+                    })
+                    .catch(error => {
+                      console.log('Veritabanından renk yüklenemedi, localStorage deneniyor...', error);
+                      
+                      // Fallback to localStorage
+                      const savedPalette = localStorage.getItem('colorPalette');
+                      if (savedPalette) {
+                        const palette = JSON.parse(savedPalette);
+                        applyColors(palette);
+                        console.log('Renk paleti localStorage\'dan yüklendi');
+                      } else {
+                        console.log('Hiçbir renk paleti bulunamadı, varsayılan renkler kullanılacak');
+                      }
+                    });
+
                 } catch (e) {
                   console.log('Settings loading error:', e);
                 }
               })();
-            `,
+            `
           }}
         />
       </head>
