@@ -53,6 +53,22 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
+                  // Load favicon from localStorage
+                  const savedSettings = localStorage.getItem('siteSettings');
+                  if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    if (settings.favicon) {
+                      let link = document.querySelector("link[rel*='icon']");
+                      if (!link) {
+                        link = document.createElement('link');
+                        link.rel = 'icon';
+                        document.head.appendChild(link);
+                      }
+                      link.href = settings.favicon;
+                    }
+                  }
+
+                  // Load color palette
                   const savedPalette = localStorage.getItem('colorPalette');
                   if (savedPalette) {
                     const palette = JSON.parse(savedPalette);
@@ -114,7 +130,7 @@ export default function RootLayout({
                     }
                   }
                 } catch (e) {
-                  console.log('Color loading error:', e);
+                  console.log('Settings loading error:', e);
                 }
               })();
             `,

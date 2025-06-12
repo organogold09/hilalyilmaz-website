@@ -16,7 +16,9 @@ import {
   Bell,
   Eye,
   Settings,
-  Linkedin
+  Linkedin,
+  Image,
+  Upload
 } from 'lucide-react'
 
 interface SiteSettings {
@@ -27,6 +29,7 @@ interface SiteSettings {
   phone: string
   address: string
   metaKeywords: string
+  favicon: string
   socialMedia: {
     facebook: string
     twitter: string
@@ -61,6 +64,7 @@ const SettingsManager = () => {
     phone: '+90 555 123 45 67',
     address: 'İstanbul, Türkiye',
     metaKeywords: 'hilal yılmaz, türk yazarı, kitap, roman, edebiyat, genç yazar',
+    favicon: '',
     socialMedia: {
       facebook: 'https://facebook.com/hilalyilmazhy',
       twitter: 'https://twitter.com/hilalyilmazhy',
@@ -87,6 +91,7 @@ const SettingsManager = () => {
   })
 
   const [activeTab, setActiveTab] = useState<'general' | 'social' | 'seo' | 'performance' | 'notifications'>('general')
+  const [faviconPreview, setFaviconPreview] = useState<string>('')
 
   // Load settings from localStorage on component mount
   useEffect(() => {
@@ -96,6 +101,9 @@ const SettingsManager = () => {
         if (savedSettings) {
           const parsedSettings = JSON.parse(savedSettings)
           setSettings(parsedSettings)
+          if (parsedSettings.favicon) {
+            setFaviconPreview(parsedSettings.favicon)
+          }
         }
       } catch (error) {
         console.error('Site ayarları yüklenirken hata:', error)
@@ -122,12 +130,52 @@ const SettingsManager = () => {
     }
   }
 
+  const handleFaviconUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        alert('Lütfen geçerli bir resim dosyası seçin.')
+        return
+      }
+
+      // Check file size (max 1MB)
+      if (file.size > 1024 * 1024) {
+        alert('Favicon dosyası 1MB\'dan küçük olmalıdır.')
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setFaviconPreview(result)
+        setSettings(prev => ({
+          ...prev,
+          favicon: result
+        }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const saveSettings = () => {
     try {
       // Save to localStorage
       localStorage.setItem('siteSettings', JSON.stringify(settings))
+      
+      // Update favicon in document head
+      if (settings.favicon) {
+        let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement
+        if (!link) {
+          link = document.createElement('link')
+          link.rel = 'icon'
+          document.head.appendChild(link)
+        }
+        link.href = settings.favicon
+      }
+      
       console.log('Site ayarları kaydediliyor:', settings)
-      alert('Site ayarları başarıyla kaydedildi! Ana sayfayı yenileyin.')
+      alert('Site ayarları başarıyla kaydedildi! Favicon güncellendi.')
     } catch (error) {
       console.error('Site ayarları kaydedilirken hata:', error)
       alert('Site ayarları kaydedilirken bir hata oluştu.')
@@ -287,6 +335,46 @@ const SettingsManager = () => {
                     placeholder="anahtar, kelime, virgül, ile, ayrılmış"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Favicon (Tarayıcı Sekmesi Logosu)
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0">
+                      {faviconPreview ? (
+                        <img 
+                          src={faviconPreview} 
+                          alt="Favicon Preview" 
+                          className="w-12 h-12 rounded border-2 border-gray-200 object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
+                          <Image size={20} className="text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFaviconUpload}
+                        className="hidden"
+                        id="favicon-upload"
+                      />
+                      <label
+                        htmlFor="favicon-upload"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 cursor-pointer"
+                      >
+                        <Upload size={16} />
+                        Favicon Yükle
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG veya ICO formatında, maksimum 1MB
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
