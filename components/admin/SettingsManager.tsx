@@ -246,6 +246,7 @@ const SettingsManager = () => {
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Site Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Site Adı
@@ -254,10 +255,12 @@ const SettingsManager = () => {
                       type="text"
                       value={settings.siteName}
                       onChange={(e) => handleInputChange('root', 'siteName', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Site adını girin"
                     />
                   </div>
 
+                  {/* Site URL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Site URL
@@ -266,113 +269,120 @@ const SettingsManager = () => {
                       type="url"
                       value={settings.siteUrl}
                       onChange={(e) => handleInputChange('root', 'siteUrl', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://example.com"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Site Açıklaması
-                  </label>
-                  <textarea
-                    value={settings.siteDescription}
-                    onChange={(e) => handleInputChange('root', 'siteDescription', e.target.value)}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Email */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Mail size={16} className="inline mr-2" />
-                      E-posta
+                      E-posta Adresi
                     </label>
                     <input
                       type="email"
                       value={settings.email}
                       onChange={(e) => handleInputChange('root', 'email', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="info@example.com"
                     />
                   </div>
 
+                  {/* Phone */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Phone size={16} className="inline mr-2" />
-                      Telefon
+                      Telefon Numarası
                     </label>
                     <input
                       type="tel"
                       value={settings.phone}
                       onChange={(e) => handleInputChange('root', 'phone', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="+90 555 123 45 67"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <MapPin size={16} className="inline mr-2" />
-                    Adres
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.address}
-                    onChange={(e) => handleInputChange('root', 'address', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                  {/* Address */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Adres
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.address}
+                      onChange={(e) => handleInputChange('root', 'address', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="İstanbul, Türkiye"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Meta Anahtar Kelimeler
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.metaKeywords}
-                    onChange={(e) => handleInputChange('root', 'metaKeywords', e.target.value)}
-                    placeholder="anahtar, kelime, virgül, ile, ayrılmış"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                  {/* Site Description */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Site Açıklaması
+                    </label>
+                    <textarea
+                      value={settings.siteDescription}
+                      onChange={(e) => handleInputChange('root', 'siteDescription', e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Sitenizin kısa açıklaması"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Favicon (Tarayıcı Sekmesi Logosu)
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0">
-                      {faviconPreview ? (
-                        <img 
-                          src={faviconPreview} 
-                          alt="Favicon Preview" 
-                          className="w-12 h-12 rounded border-2 border-gray-200 object-cover"
+                  {/* Meta Keywords */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Meta Anahtar Kelimeler
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.metaKeywords}
+                      onChange={(e) => handleInputChange('root', 'metaKeywords', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="anahtar kelime 1, anahtar kelime 2, anahtar kelime 3"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Virgülle ayırarak yazın</p>
+                  </div>
+
+                  {/* Favicon Upload */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Favicon (Tarayıcı Sekmesi Logosu)
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-shrink-0">
+                        {faviconPreview ? (
+                          <img 
+                            src={faviconPreview} 
+                            alt="Favicon Preview" 
+                            className="w-12 h-12 rounded border-2 border-gray-200 object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
+                            <Image size={20} className="text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFaviconUpload}
+                          className="hidden"
+                          id="favicon-upload"
                         />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
-                          <Image size={20} className="text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFaviconUpload}
-                        className="hidden"
-                        id="favicon-upload"
-                      />
-                      <label
-                        htmlFor="favicon-upload"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 cursor-pointer"
-                      >
-                        <Upload size={16} />
-                        Favicon Yükle
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">
-                        PNG, JPG veya ICO formatında, maksimum 1MB
-                      </p>
+                        <label
+                          htmlFor="favicon-upload"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 cursor-pointer"
+                        >
+                          <Upload size={16} />
+                          Favicon Yükle
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1">
+                          PNG, JPG veya ICO formatında, maksimum 1MB
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
